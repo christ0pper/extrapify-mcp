@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "extrapify": {
+      "command": "node",
+      "args": ["C:/path/to/extrapify-mcp/mcp/server.mjs"],
+      "env": {
+        "EXTRAPIFY_API_BASE_URL": "https://your-extrapify-api-host",
+        "EXTRAPIFY_API_KEY": "sk_live_your_key_here"
+      }
+    }
+  }
+}

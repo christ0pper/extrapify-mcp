@@ -1,0 +1,27 @@
+{
+  "name": "extrapify-mcp",
+  "version": "1.0.0",
+  "description": "Thin MCP integration layer for the hosted Extrapify extraction API.",
+  "type": "module",
+  "private": false,
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "node --check ./mcp/config.mjs && node --check ./mcp/extrapify-client.mjs && node --check ./mcp/tool-registry.mjs && node --check ./mcp/tools/extract-structured-data.mjs && node --check ./mcp/server.mjs",
+    "mcp:start": "node ./mcp/server.mjs"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "extrapify",
+    "structured-data",
+    "extraction",
+    "claude-desktop"
+  ],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^4.3.6"
+  }
+}
