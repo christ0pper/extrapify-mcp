@@ -53,7 +53,7 @@ function buildErrorText(error) {
 export const extractStructuredDataTool = {
   definition: {
     description:
-      "Retrieve structured web context from a public webpage using Extrapify's schema-guided extraction engine.",
+      "Extract structured JSON from any public webpage using Extrapify's schema-guided extraction engine. Define the fields you want (title, price, author, tags, etc.) and their types, point the tool at a URL, and get back validated, typed JSON. Handles JavaScript-heavy pages via Browserless rendering. Ideal for scraping product pages, articles, job listings, company data, search results, and any other structured web content. Returns extracted fields, confidence score, item count, and tokens used.",
     inputSchema,
   },
   name: 'extract_structured_data',
