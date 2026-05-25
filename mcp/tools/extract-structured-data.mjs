@@ -2,14 +2,25 @@ import * as z from 'zod/v4';
 import { callExtractStructuredData, ExtrapifyApiError } from '../extrapify-client.mjs';
 
 const inputSchema = {
+  url: z
+    .string()
+    .url()
+    .describe(
+      'Fully qualified public webpage URL to extract structured data from (e.g. https://example.com/article). Must be publicly accessible. Does not support login-protected or paywalled pages.'
+    ),
+
+  schema: z
+    .record(z.string(), z.unknown())
+    .describe(
+      'Schema definition that controls what fields to extract. Each key is the field name and each value is the field type. Supported types: "string", "number", "integer", "float", "boolean", "date", "datetime", "url", and array variants using [] suffix (e.g. "string[]"). Example: { "title": "string", "price": "number", "tags": "string[]", "published_at": "date" }. Nested objects are supported for grouped fields.'
+    ),
+
   mode: z
     .enum(['auto', 'single', 'list'])
     .default('auto')
-    .describe('Extraction mode. Use auto unless you need a forced single object or list.'),
-  schema: z
-    .record(z.string(), z.unknown())
-    .describe('Schema-guided extraction definition using Extrapify field types and nested objects.'),
-  url: z.string().url().describe('Public webpage URL to extract structured data from.'),
+    .describe(
+      'Extraction mode controlling how many items are returned. "auto" detects automatically based on page structure (recommended). "single" forces extraction of one primary item only (use for product pages, articles, profiles). "list" extracts all matching items as an array (use for search results, directories, tables). Default: "auto".'
+    ),
 };
 
 function buildSuccessText(result) {
