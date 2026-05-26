@@ -1,98 +1,78 @@
-import * as z from 'zod/v4';
-import { callExtractStructuredData, ExtrapifyApiError } from '../extrapify-client.mjs';
+import { getMcpConfig } from './config.mjs';
 
-const inputSchema = {
-  url: z
-    .string()
-    .url()
-    .describe(
-      'Fully qualified public webpage URL to extract structured data from (e.g. https://example.com/article). Must be publicly accessible. Does not support login-protected or paywalled pages.'
-    ),
-
-  schema: z
-    .record(z.string(), z.unknown())
-    .describe(
-      'Schema definition that controls what fields to extract. Each key is the field name and each value is the field type. Supported types: "string", "number", "integer", "float", "boolean", "date", "datetime", "url", and array variants using [] suffix (e.g. "string[]"). Example: { "title": "string", "price": "number", "tags": "string[]", "published_at": "date" }. Nested objects are supported for grouped fields.'
-    ),
-
-  mode: z
-    .enum(['auto', 'single', 'list'])
-    .default('auto')
-    .describe(
-      'Extraction mode controlling how many items are returned. "auto" detects automatically based on page structure (recommended). "single" forces extraction of one primary item only (use for product pages, articles, profiles). "list" extracts all matching items as an array (use for search results, directories, tables). Default: "auto".'
-    ),
-};
-
-function buildSuccessText(result) {
-  return JSON.stringify(
-    {
-      confidence: result.confidence,
-      count: result.count,
-      extracted: result.extracted,
-      tokens_used: result.tokens_used,
-      type: result.type,
-    },
-    null,
-    2
-  );
+export class ExtrapifyApiError extends Error {
+  constructor(message, details = {}) {
+    super(message);
+    this.name = 'ExtrapifyApiError';
+    this.details = details;
+  }
 }
 
-function buildErrorText(error) {
-  return JSON.stringify(
-    {
-      error: error.message,
-      request_id: error.details?.requestId ?? null,
-      status: error.details?.status ?? 500,
-      upstream: error.details?.body ?? null,
-    },
-    null,
-    2
-  );
-}
+export async function callExtractStructuredData(input) {
+  const config = getMcpConfig();
 
-export const extractStructuredDataTool = {
-  definition: {
-    description:
-      "Extract structured JSON from any public webpage using Extrapify's schema-guided extraction engine. Define the fields you want (title, price, author, tags, etc.) and their types, point the tool at a URL, and get back validated, typed JSON. The tool fetches the page, renders JavaScript if needed via Browserless, passes the content to Claude for schema-guided extraction, validates the output against your schema, and returns typed JSON with a confidence score. Handles JavaScript-heavy pages via Browserless rendering. Ideal for scraping product pages, articles, job listings, company data, search results, and any other structured web content. Returns extracted fields, confidence score, item count, and tokens used. Use this tool when you need to extract specific fields from a webpage in a structured, repeatable way. Do not use for pages requiring authentication, login, or CAPTCHA. For best results, use descriptive field names that match the content you expect on the page. Returns an error if the URL is inaccessible, returns non-HTML content, or if the page content does not match the provided schema. Check the status field in error responses for HTTP error codes.",
-    inputSchema,
-  },
-  name: 'extract_structured_data',
-  async run(input) {
-    try {
-      const result = await callExtractStructuredData(input);
-
-      return {
-        content: [
-          {
-            text: buildSuccessText(result.data),
-            type: 'text',
-          },
-        ],
-        structuredContent: {
-          request_id: result.requestId,
-          ...result.data,
-        },
-      };
-    } catch (error) {
-      if (error instanceof ExtrapifyApiError) {
-        return {
-          content: [
-            {
-              text: buildErrorText(error),
-              type: 'text',
-            },
-          ],
-          isError: true,
-          structuredContent: {
-            error: error.message,
-            request_id: error.details?.requestId ?? null,
-            status: error.details?.status ?? 500,
-            upstream: error.details?.body ?? null,
-          },
-        };
+  // Smithery scans without env vars
+  // Return a structured error instead of failing with a fetch exception
+  if (!config.isConfigured) {
+    throw new ExtrapifyApiError(
+      'Extrapify MCP is not configured. Set EXTRAPIFY_API_KEY and EXTRAPIFY_API_BASE_URL.',
+      {
+        requestId: null,
+        status: 503,
       }
+    );
+  }
 
-      throw error;
+  const controller = new AbortController();
+
+  const timeout = setTimeout(() => {
+    controller.abort();
+  }, config.timeoutMs ?? 60000);
+
+  try {
+    const response = await fetch(
+      `${config.baseUrl}/extract-structured-data`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${config.apiKey}`,
+        },
+        body: JSON.stringify(input),
+        signal: controller.signal,
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new ExtrapifyApiError(
+        data?.error || 'Extraction request failed.',
+        {
+          requestId: data?.request_id ?? null,
+          status: response.status,
+          body: data,
+        }
+      );
     }
-  },
-};
+
+    return {
+      requestId: data?.request_id ?? null,
+      data,
+    };
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      throw new ExtrapifyApiError(
+        'Extraction request timed out.',
+        {
+          requestId: null,
+          status: 504,
+        }
+      );
+    }
+
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
