@@ -23,5 +23,27 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
     "zod": "^4.3.6"
+  },
+  "smithery": {
+    "startCommand": {
+      "type": "stdio",
+      "configSchema": {
+        "type": "object",
+        "required": ["apiKey"],
+        "properties": {
+          "apiKey": {
+            "type": "string",
+            "description": "Your Extrapify API key (sk_live_...)"
+          },
+          "apiBaseUrl": {
+            "type": "string",
+            "description": "Extrapify API base URL",
+            "default": "https://extrapify.com"
+          }
+        }
+      },
+      "command": "node",
+      "args": ["mcp/server.mjs"]
+    }
   }
 }
