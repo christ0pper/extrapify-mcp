@@ -1,0 +1,23 @@
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    required:
+      - apiKey
+    properties:
+      apiKey:
+        type: string
+        description: "Your Extrapify API key (sk_live_...)"
+      apiBaseUrl:
+        type: string
+        description: "Extrapify API base URL"
+        default: "https://extrapify.com"
+  commandFunction: |-
+    (config) => ({
+      command: "node",
+      args: ["mcp/server.mjs"],
+      env: {
+        EXTRAPIFY_API_KEY: config.apiKey,
+        EXTRAPIFY_API_BASE_URL: config.apiBaseUrl || "https://extrapify.com"
+      }
+    })
