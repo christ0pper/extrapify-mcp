@@ -1,6 +1,6 @@
 {
   "name": "extrapify-mcp",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Thin MCP integration layer for the hosted Extrapify extraction API.",
   "type": "module",
   "private": false,
@@ -25,25 +25,24 @@
     "zod": "^4.3.6"
   },
   "smithery": {
-    "startCommand": {
-      "type": "stdio",
-      "configSchema": {
-        "type": "object",
-        "required": ["apiKey"],
-        "properties": {
-          "apiKey": {
-            "type": "string",
-            "description": "Your Extrapify API key (sk_live_...)"
-          },
-          "apiBaseUrl": {
-            "type": "string",
-            "description": "Extrapify API base URL",
-            "default": "https://extrapify.com"
-          }
+  "startCommand": {
+    "type": "stdio",
+    "configSchema": {
+      "type": "object",
+      "required": ["apiKey"],
+      "properties": {
+        "apiKey": {
+          "type": "string",
+          "description": "Your Extrapify API key (sk_live_...)"
+        },
+        "apiBaseUrl": {
+          "type": "string",
+          "description": "Extrapify API base URL",
+          "default": "https://extrapify.com"
         }
-      },
-      "command": "node",
-      "args": ["mcp/server.mjs"]
-    }
+      }
+    },
+    "commandFunction": "(config) => ({ command: 'node', args: ['mcp/server.mjs'], env: { EXTRAPIFY_API_KEY: config.apiKey, EXTRAPIFY_API_BASE_URL: config.apiBaseUrl || 'https://extrapify.com' } })"
   }
+}
 }
