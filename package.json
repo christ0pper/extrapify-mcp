@@ -1,6 +1,6 @@
 {
   "name": "extrapify-mcp",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Thin MCP integration layer for the hosted Extrapify extraction API.",
   "type": "module",
   "private": false,
