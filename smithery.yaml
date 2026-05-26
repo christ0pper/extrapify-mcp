@@ -1,0 +1,31 @@
+name: christ0pper/extrapify-mcp
+description: Extract structured JSON from any public webpage using a schema. Define fields, send a URL, get back validated typed output. Claude-powered extraction with Browserless fallback for JS-heavy pages.
+homepage: https://extrapify.com
+transport: stdio
+tools:
+  - name: extract_structured_data
+    description: Retrieve structured JSON from a public webpage using a schema-guided request. Supports string, number, boolean, date, datetime, url types and arrays.
+
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    required:
+      - apiKey
+    properties:
+      apiKey:
+        type: string
+        description: Your Extrapify API key (sk_live_...)
+      apiBaseUrl:
+        type: string
+        description: Extrapify API base URL
+        default: https://extrapify.com
+  commandFunction: |-
+    (config) => ({
+      command: "node",
+      args: ["mcp/server.mjs"],
+      env: {
+        EXTRAPIFY_API_KEY: config.apiKey,
+        EXTRAPIFY_API_BASE_URL: config.apiBaseUrl || "https://extrapify.com"
+      }
+    })
